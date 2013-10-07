@@ -239,10 +239,10 @@ class MainWindow(wx.Frame):
     def SetHist(self,event):
         if self.dt1.HistNow:
             self.dt1.HistNow = False
-            self.buttons[6].SetLabel('Start Plots')
+            self.buttons[6].SetLabel('Start Histograms')
         else:
             self.dt1.HistNow = True
-            self.buttons[6].SetLabel('Start Histograms')
+            self.buttons[6].SetLabel('Start Plots')
 
     def ChangeTitle(self,event):
         self.boxCol1 = wx.TextEntryDialog(None,"Plot Title? ","X-axis","0")
