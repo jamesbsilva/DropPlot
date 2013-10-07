@@ -27,7 +27,7 @@ class PlottingManager():
         self.font = {'fontname':'Lucid','fontsize':30, 'fontweight':'bold'}
         self.fontax = {'fontname':'Lucid','fontsize':24, 'fontweight':'bold'}
 
-    def plotData(self,filename, xcol, ycol, xaxis, yaxis, titleIn, labelIn, plotLogX = False,plotLogY = False):
+    def plotData(self,filename, xcol, ycol, xaxis, yaxis, titleIn, labelIn, plotLogX = False,plotLogY = False,histMode = False):
         print "Plotting : ", str(filename)
         data = np.genfromtxt(filename, unpack=True)
         if plotLogX:
@@ -40,10 +40,16 @@ class PlottingManager():
             ty = data[ycol]
         plt.xlabel(xaxis, **self.fontax); plt.ylabel(yaxis, **self.fontax);
         plt.title(titleIn,**self.font)
-        if labelIn is None:
-            plt.plot(tx, ty, marker='o')
+        if histMode:
+            if labelIn is None:
+                plt.hist(tx)
+            else:
+                plt.hist(tx,label=labelIn)
         else:
-            plt.plot(tx, ty, marker='o',label=labelIn)
+            if labelIn is None:
+                plt.plot(tx, ty, marker='o')
+            else:
+                plt.plot(tx, ty, marker='o',label=labelIn)
         print "Done Plotting"
 
     def checkForPlotParams(self,filename,xcol,ycol,xaxis,yaxis, titleIn, plotLgX, plotLgY):
@@ -119,12 +125,13 @@ class PlotFileDropTarget(wx.TextDropTarget):
         self.plotLogX = False; self.plotLogY = False;
         self.plotManager = PlottingManager
         self.plotNow = True
+        self.HistNow = False
 
 
     def OnDropText(self, x, y, data):
         self.obj.WriteText("Will plot | "+data[7:-2] + '\n\n')
         [self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, self.plotLogX, self.plotLogY,labelOut] = self.plotManager.checkForPlotParams(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, self.plotLogX, self.plotLogY)
-        self.plotManager.plotData(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, labelOut , self.plotLogX,self.plotLogY)
+        self.plotManager.plotData(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, labelOut , self.plotLogX,self.plotLogY,self.HistNow)
         if self.plotNow:
             self.plotManager.showPlot()
 
@@ -154,20 +161,22 @@ class MainWindow(wx.Frame):
         # add buttons
         self.dt1.xCol = 0; self.dt1.yCol = 1;
         self.sizer2 = wx.BoxSizer(wx.HORIZONTAL); self.buttons = []
+        self.sizer3 = wx.BoxSizer(wx.HORIZONTAL);
 
-        self.buttons.append(wx.Button(self, -1, "X-Axis Column &"))
+        # first row of buttons
+        self.buttons.append(wx.Button(self, -1, "X Column &"))
         self.sizer2.Add(self.buttons[0], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ChangeXaxis,self.buttons[0])
 
-        self.buttons.append(wx.Button(self, -1, "Y-Axis Column &"))
+        self.buttons.append(wx.Button(self, -1, "Y Column &"))
         self.sizer2.Add(self.buttons[1], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ChangeYaxis,self.buttons[1])
 
-        self.buttons.append(wx.Button(self, -1, "X-Axis Title &"))
+        self.buttons.append(wx.Button(self, -1, "X Title &"))
         self.sizer2.Add(self.buttons[2], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ChangeXtitle,self.buttons[2])
 
-        self.buttons.append(wx.Button(self, -1, "Y-Axis Title  &"))
+        self.buttons.append(wx.Button(self, -1, "Y Title  &"))
         self.sizer2.Add(self.buttons[3], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ChangeYtitle,self.buttons[3])
 
@@ -175,21 +184,27 @@ class MainWindow(wx.Frame):
         self.sizer2.Add(self.buttons[4], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ChangeTitle,self.buttons[4])
 
+        # second row of buttons
         self.buttons.append(wx.Button(self, -1, "Hold For Multi Plots  &"))
-        self.sizer2.Add(self.buttons[5], 1, wx.EXPAND)
+        self.sizer3.Add(self.buttons[5], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ShowPlots,self.buttons[5])
 
-        self.buttons.append(wx.Button(self, -1, "X Axis Log Scale  &"))
-        self.sizer2.Add(self.buttons[6], 1, wx.EXPAND)
-        self.Bind(wx.EVT_BUTTON, self.SetLogX,self.buttons[6])
+        self.buttons.append(wx.Button(self, -1, "Start Histogram &"))
+        self.sizer3.Add(self.buttons[6], 1, wx.EXPAND)
+        self.Bind(wx.EVT_BUTTON, self.SetHist,self.buttons[6])
 
-        self.buttons.append(wx.Button(self, -1, "Y Axis Log Scale  &"))
-        self.sizer2.Add(self.buttons[7], 1, wx.EXPAND)
-        self.Bind(wx.EVT_BUTTON, self.SetLogY,self.buttons[7])
+        self.buttons.append(wx.Button(self, -1, "Log Scale X &"))
+        self.sizer3.Add(self.buttons[7], 1, wx.EXPAND)
+        self.Bind(wx.EVT_BUTTON, self.SetLogX,self.buttons[7])
+
+        self.buttons.append(wx.Button(self, -1, "Log Scale Y &"))
+        self.sizer3.Add(self.buttons[8], 1, wx.EXPAND)
+        self.Bind(wx.EVT_BUTTON, self.SetLogY,self.buttons[8])
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.text, 1, wx.EXPAND)
         self.sizer.Add(self.sizer2, 0, wx.EXPAND)
+        self.sizer.Add(self.sizer3, 0, wx.EXPAND)
 
         self.SetSizer(self.sizer)
         self.SetAutoLayout(1)
@@ -202,7 +217,7 @@ class MainWindow(wx.Frame):
             self.dt1.xTitle = self.boxCol1.GetValue()
 
     def ChangeYtitle(self,event):
-        self.boxCol1 = wx.TextEntryDialog(None,"X- Axis Title? ","Y-axis","y")
+        self.boxCol1 = wx.TextEntryDialog(None,"Y- Axis Title? ","Y-axis","y")
         if self.boxCol1.ShowModal() == wx.ID_OK :
             self.dt1.yTitle = self.boxCol1.GetValue()
 
@@ -220,6 +235,14 @@ class MainWindow(wx.Frame):
             self.dt1.plotNow = True
             self.plotManager.showPlot()
             self.buttons[5].SetLabel('Hold For Multi Plots')
+
+    def SetHist(self,event):
+        if self.dt1.HistNow:
+            self.dt1.HistNow = False
+            self.buttons[6].SetLabel('Start Plots')
+        else:
+            self.dt1.HistNow = True
+            self.buttons[6].SetLabel('Start Histograms')
 
     def ChangeTitle(self,event):
         self.boxCol1 = wx.TextEntryDialog(None,"Plot Title? ","X-axis","0")
@@ -250,7 +273,6 @@ class DropPlot(wx.App):
         frame = MainWindow(None, -1, "DropPlot - Drag data to plot")
         self.SetTopWindow(frame)
         return True
-
 
 # main loop
 app = DropPlot(0)
