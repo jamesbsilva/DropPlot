@@ -118,11 +118,15 @@ class PlotFileDropTarget(wx.TextDropTarget):
         self.plotTitle = "plot";
         self.plotLogX = False; self.plotLogY = False;
         self.plotManager = PlottingManager
+        self.plotNow = True
+
 
     def OnDropText(self, x, y, data):
         self.obj.WriteText("Will plot | "+data[7:-2] + '\n\n')
         [self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, self.plotLogX, self.plotLogY,labelOut] = self.plotManager.checkForPlotParams(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, self.plotLogX, self.plotLogY)
         self.plotManager.plotData(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, labelOut , self.plotLogX,self.plotLogY)
+        if self.plotNow:
+            self.plotManager.showPlot()
 
 class MainWindow(wx.Frame):
     def __init__(self,parent,id,title):
@@ -171,7 +175,7 @@ class MainWindow(wx.Frame):
         self.sizer2.Add(self.buttons[4], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ChangeTitle,self.buttons[4])
 
-        self.buttons.append(wx.Button(self, -1, "Show Plot  &"))
+        self.buttons.append(wx.Button(self, -1, "Hold For Multi Plots  &"))
         self.sizer2.Add(self.buttons[5], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.ShowPlots,self.buttons[5])
 
@@ -209,7 +213,13 @@ class MainWindow(wx.Frame):
         self.dt1.plotLogY = True
 
     def ShowPlots(self,event):
-        self.plotManager.showPlot()
+        if self.dt1.plotNow:
+            self.dt1.plotNow = False
+            self.buttons[5].SetLabel('Show Multi Plots')
+        else:
+            self.dt1.plotNow = True
+            self.plotManager.showPlot()
+            self.buttons[5].SetLabel('Hold For Multi Plots')
 
     def ChangeTitle(self,event):
         self.boxCol1 = wx.TextEntryDialog(None,"Plot Title? ","X-axis","0")
