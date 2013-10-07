@@ -31,8 +31,8 @@ then
 
 plot parameters will be set based on parsed file.
 
-plotparams.dat  example 
-
+plotparams.dat example contents
+------
 xTitle(some x axis) # x axis title
 
 yTitle(y label here) # y axis title
