@@ -25,7 +25,11 @@ sh make
 
 Directory plot parameter files 
 ------
-If directory contains a file plotparams.dat plot parameters will be set based on parsed file.
+If directory contains a file plotparams.dat 
+
+then 
+
+plot parameters will be set based on parsed file.
 
 plotparams.dat  example 
 
