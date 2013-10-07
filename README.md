@@ -30,12 +30,19 @@ If directory contains a file plotparams.dat plot parameters will be set based on
 plotparams.dat  example 
 
 xTitle(some x axis) # x axis title
+
 yTitle(y label here) # y axis title
+
 Title(new plot) # plot title
+
 xCol(1) # x axis data is second column
+
 yCol(0) # y axis data is first column
+
 xLog() # plot x-axis using log scale
+
 yLog() # plot y-axis using log scale
+
 
 Data labels in file name
 ------
