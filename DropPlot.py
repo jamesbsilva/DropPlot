@@ -222,10 +222,20 @@ class MainWindow(wx.Frame):
             self.dt1.yTitle = self.boxCol1.GetValue()
 
     def SetLogX(self,event):
-        self.dt1.plotLogX = True
+        if self.dt1.plotLogX:
+            self.dt1.plotLogX = False
+            self.buttons[7].SetLabel('Log Scale X On')
+        else:
+            self.dt1.plotLogX = True
+            self.buttons[7].SetLabel('Log Scale X Off')
 
     def SetLogY(self,event):
-        self.dt1.plotLogY = True
+        if self.dt1.plotLogY:
+            self.dt1.plotLogY = False
+            self.buttons[8].SetLabel('Log Scale Y On')
+        else:
+            self.dt1.plotLogY = True
+            self.buttons[8].SetLabel('Log Scale Y Off')
 
     def ShowPlots(self,event):
         if self.dt1.plotNow:
