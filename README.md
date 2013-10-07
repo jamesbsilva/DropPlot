@@ -25,7 +25,7 @@ sh make
 
 Directory plot parameter files 
 ------
-If directory contains a file plotparams.dat 
+If directory of the dragged gile contains a file called plotparams.dat 
 
 then 
 
