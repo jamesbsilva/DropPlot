@@ -11,6 +11,8 @@
 ##########################################################
 
 import wx
+import re
+import tempfile
 import numpy as np
 import os.path
 import brewer2mpl
@@ -29,7 +31,19 @@ class PlottingManager():
 
     def plotData(self,filename, xcol, ycol, xaxis, yaxis, titleIn, labelIn, plotLogX = False,plotLogY = False,histMode = False):
         print "Plotting : ", str(filename)
-        data = np.genfromtxt(filename, unpack=True)
+        fileIn = open(filename,'r')
+        fileStr = fileIn.read()
+        csvType = False
+        if ',' in fileStr:
+            csvType = True
+        if csvType:
+            #print "CSV all"
+            data = np.genfromtxt(filename, unpack=True, delimiter=',')
+        else:
+            fileStr = re.sub('\s+', ' ', fileStr).strip()
+            fp = tempfile.NamedTemporaryFile()
+            fp.write(fileStr)
+            data = np.genfromtxt(filename, unpack=True)
         if plotLogX:
             tx = np.log(data[xcol]);
         else:
