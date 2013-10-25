@@ -60,3 +60,6 @@ if drag dropped filename has "-label(++)" in the filename the parentheses+ will 
 -label(+my data+)
 
 will label the data as "my data".
+
+
+![ScreenShot](gui.png)
