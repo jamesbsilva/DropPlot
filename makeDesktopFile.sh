@@ -16,3 +16,7 @@ echo "X-Ayatana-Desktop-Shortcuts=Regular;" >> dropplot.desktop
 echo "Name[en_US]=DropPlot" >> dropplot.desktop
 echo " " >> dropplot.desktop
 
+# make DropPlot executable
+echo "Making dropplot executable to allow desktop file to run properly"
+chmod +x DropPlot.py
+
