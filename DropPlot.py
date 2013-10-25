@@ -18,6 +18,7 @@ import os.path
 import brewer2mpl
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from math import log10, floor
 
 class PlottingManager():
     def __init__(self):
@@ -28,8 +29,63 @@ class PlottingManager():
         self.plotParamsFilename = "plotparams.dat"
         self.font = {'fontname':'Lucid','fontsize':30, 'fontweight':'bold'}
         self.fontax = {'fontname':'Lucid','fontsize':24, 'fontweight':'bold'}
+        self.plotLogX = False; self.plotLogY = False
+        self.fitData = False; self.histMode = False
+        self.fitMinXrow = 0; self.fitMaxXrow = -1;
 
-    def plotData(self,filename, xcol, ycol, xaxis, yaxis, titleIn, labelIn, plotLogX = False,plotLogY = False,histMode = False):
+    def setHistMode(self,hs):
+        self.histMode = hs
+
+    def setFitData(self,fs):
+        self.fitData = fs
+
+    def setLogAxis(self,logOn,axis):
+        if logOn:
+            if axis is 0:
+                self.plotLogX = True
+            if axis is 1:
+                self.plotLogY = True
+        else:
+            if axis is 0:
+                self.plotLogX = False
+            if axis is 1:
+                self.plotLogY = False
+
+    def plotData(self,filename, xcol, ycol, xaxis, yaxis, titleIn, labelIn):
+        [tx,ty] = self.getData(filename,xcol,ycol,self.plotLogX,self.plotLogY)
+        if self.fitData:
+            [txf,tyf,fitpar] = self.fitLinear(tx,ty)
+        plt.xlabel(xaxis, **self.fontax); plt.ylabel(yaxis, **self.fontax);
+        plt.title(titleIn,**self.font)
+        if self.histMode:
+            if labelIn is None:
+                plt.hist(tx)
+            else:
+                plt.hist(tx,label=labelIn)
+        else:
+            if labelIn is None:
+                plt.plot(tx, ty, marker='o')
+            else:
+                plt.plot(tx, ty, marker='o',label=labelIn)
+            if self.fitData:
+                m = float(fitpar[0])
+                b = float(fitpar[1])
+                labelFit="Linear Fit |  m : "+('%.3f' % m)+"      b : "+('%.3f' % b)
+                plt.plot(txf,tyf(txf),'-',label=labelFit)
+        print "Done Plotting"
+
+    def round_sig(x, sig=2):
+        return round(x, sig-int(floor(log10(x)))-1)
+
+    def fitLinear(self,xcol,ycol):
+        if self.fitMaxXrow is (-1):
+            self.fitMaxXrow = xcol.shape[0]
+        fi = np.polyfit(xcol[self.fitMinXrow:self.fitMaxXrow],ycol[self.fitMinXrow:self.fitMaxXrow],1)
+        self.fitMaxXrow = -1;self.fitMinXrow = 0;
+        y =  np.poly1d(fi)
+        return [xcol,y,fi]
+
+    def getData(self,filename, xcol, ycol,plotLogX = False,plotLogY = False):
         print "Plotting : ", str(filename)
         fileIn = open(filename,'r')
         fileStr = fileIn.read()
@@ -52,21 +108,9 @@ class PlottingManager():
             ty = np.log(data[ycol])
         else:
             ty = data[ycol]
-        plt.xlabel(xaxis, **self.fontax); plt.ylabel(yaxis, **self.fontax);
-        plt.title(titleIn,**self.font)
-        if histMode:
-            if labelIn is None:
-                plt.hist(tx)
-            else:
-                plt.hist(tx,label=labelIn)
-        else:
-            if labelIn is None:
-                plt.plot(tx, ty, marker='o')
-            else:
-                plt.plot(tx, ty, marker='o',label=labelIn)
-        print "Done Plotting"
+        return [tx,ty]
 
-    def checkForPlotParams(self,filename,xcol,ycol,xaxis,yaxis, titleIn, plotLgX, plotLgY):
+    def checkForPlotParams(self,filename,xcol,ycol,xaxis,yaxis, titleIn):
         paramFile = self.parseDir(filename)+self.plotParamsFilename
         if os.path.exists(paramFile):
             strFile = open(paramFile,"r")
@@ -74,39 +118,66 @@ class PlottingManager():
             inL = paramRaw.find("xCol(")
             if inL is not -1:
                 inL += 5
-                inR = paramRaw.find(")",inL,len(paramRaw))
+                endline = paramRaw.find("\n",inL,len(paramRaw))
+                inR = paramRaw.find(")",inL,endline)
                 xcol = int(paramRaw[inL:inR])
             inL = paramRaw.find("yCol(")
             if inL is not (-1):
                 inL += 5
-                inR = paramRaw.find(")",inL,len(paramRaw))
+                endline = paramRaw.find("\n",inL,len(paramRaw))
+                inR = paramRaw.find(")",inL,endline)
                 ycol = int(paramRaw[inL:inR])
             inL = paramRaw.find("xTitle(")
             if inL is not (-1):
                 inL += 7
-                inR = paramRaw.find(")",inL,len(paramRaw))
+                endline = paramRaw.find("\n",inL,len(paramRaw))
+                inR = paramRaw.find(")",inL,endline)
+                while paramRaw.find(")",(inR+1),endline) is not (-1):
+                    inR = paramRaw.find(")",(inR+1),endline)
                 xaxis = paramRaw[inL:inR]
             inL = paramRaw.find("yTitle(")
             if inL is not (-1):
                 inL += 7
-                inR = paramRaw.find(")",inL,len(paramRaw))
+                endline = paramRaw.find("\n",inL,len(paramRaw))
+                inR = paramRaw.find(")",inL,endline)
+                while paramRaw.find(")",(inR+1),endline) is not (-1):
+                    inR = paramRaw.find(")",(inR+1),endline)
                 yaxis = paramRaw[inL:inR]
-            inL = paramRaw.find("Title(")
+                inL = paramRaw.find("Title(")
             if inL is not (-1):
                 inL += 6
-                inR = paramRaw.find(")",inL,len(paramRaw))
+                endline = paramRaw.find("\n",inL,len(paramRaw))
+                inR = paramRaw.find(")",inL,endline)
+                while paramRaw.find(")",(inR+1),endline) is not (-1):
+                    inR = paramRaw.find(")",(inR+1),endline)
                 titleIn = paramRaw[inL:inR]
             inL = paramRaw.find("xLog()")
             if inL is not (-1):
-                plotLgX = True
+                self.plotLogX = True
             else:
-                plotLgX = False
+                self.plotLogX = False
             inL = paramRaw.find("yLog()")
             if inL is not (-1):
-                plotLgY = True
+                self.plotLogY = True
             else:
-                plotLgY = False
-        return [xcol,ycol,xaxis,yaxis, titleIn, plotLgX, plotLgY,self.parseLabel(filename)]
+                self.plotLogY = False
+            inL = paramRaw.find("histogram()")
+            if inL is not (-1):
+                self.histMode = True
+            else:
+                self.histMode = False
+            inL = paramRaw.find("fit(")
+            if inL is not (-1):
+                self.fitData = True
+                inL += 4
+                inR = paramRaw.find(":",inL,len(paramRaw))
+                if inR is not (-1):
+                    self.fitMinXrow = int(paramRaw[inL:inR])
+                    inL = inR + 1
+                inR = paramRaw.find(")",inL,len(paramRaw))
+                self.fitMaxXrow = int(paramRaw[inL:inR])
+
+        return [xcol,ycol,xaxis,yaxis, titleIn, self.parseLabel(filename)]
 
     def parseDir(self,file):
         name= file.split("/")
@@ -114,11 +185,11 @@ class PlottingManager():
         return dirOut
 
     def parseLabel(self,filename):
-        inL = filename.find("-label(")
+        inL = filename.find("-label(+")
         if inL is (-1):
             return None
         inL += 7
-        inR = filename.find(")",inL,len(filename))
+        inR = filename.find("+)",inL,len(filename))
         return filename[inL:inR]
 
     def showPlot(self):
@@ -136,16 +207,14 @@ class PlotFileDropTarget(wx.TextDropTarget):
         self.xCol = 0; self.yCol = 1
         self.xTitle = "x"; self.yTitle = "y";
         self.plotTitle = "plot";
-        self.plotLogX = False; self.plotLogY = False;
         self.plotManager = PlottingManager
         self.plotNow = True
         self.HistNow = False
 
-
     def OnDropText(self, x, y, data):
         self.obj.WriteText("Will plot | "+data[7:-2] + '\n\n')
-        [self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, self.plotLogX, self.plotLogY,labelOut] = self.plotManager.checkForPlotParams(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, self.plotLogX, self.plotLogY)
-        self.plotManager.plotData(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, labelOut , self.plotLogX,self.plotLogY,self.HistNow)
+        [self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle,labelOut] = self.plotManager.checkForPlotParams(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle)
+        self.plotManager.plotData(data[7:-2],self.xCol,self.yCol,self.xTitle,self.yTitle,self.plotTitle, labelOut)
         if self.plotNow:
             self.plotManager.showPlot()
 
@@ -215,6 +284,10 @@ class MainWindow(wx.Frame):
         self.sizer3.Add(self.buttons[8], 1, wx.EXPAND)
         self.Bind(wx.EVT_BUTTON, self.SetLogY,self.buttons[8])
 
+        self.buttons.append(wx.Button(self, -1, "Linear Fit On &"))
+        self.sizer3.Add(self.buttons[9], 1, wx.EXPAND)
+        self.Bind(wx.EVT_BUTTON, self.SetFitData,self.buttons[9])
+
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.text, 1, wx.EXPAND)
         self.sizer.Add(self.sizer2, 0, wx.EXPAND)
@@ -236,19 +309,19 @@ class MainWindow(wx.Frame):
             self.dt1.yTitle = self.boxCol1.GetValue()
 
     def SetLogX(self,event):
-        if self.dt1.plotLogX:
-            self.dt1.plotLogX = False
+        if self.plotManager.plotLogX:
+            self.plotManager.setLogAxis(False,0)
             self.buttons[7].SetLabel('Log Scale X On')
         else:
-            self.dt1.plotLogX = True
+            self.plotManager.setLogAxis(True,0)
             self.buttons[7].SetLabel('Log Scale X Off')
 
     def SetLogY(self,event):
-        if self.dt1.plotLogY:
-            self.dt1.plotLogY = False
+        if self.plotManager.plotLogY:
+            self.plotManager.setLogAxis(False,1)
             self.buttons[8].SetLabel('Log Scale Y On')
         else:
-            self.dt1.plotLogY = True
+            self.plotManager.setLogAxis(True,1)
             self.buttons[8].SetLabel('Log Scale Y Off')
 
     def ShowPlots(self,event):
@@ -261,12 +334,20 @@ class MainWindow(wx.Frame):
             self.buttons[5].SetLabel('Hold For Multi Plots')
 
     def SetHist(self,event):
-        if self.dt1.HistNow:
-            self.dt1.HistNow = False
+        if self.plotManager.histMode:
+            self.plotManager.setHistMode(False)
             self.buttons[6].SetLabel('Start Histograms')
         else:
-            self.dt1.HistNow = True
+            self.plotManager.setHistMode(True)
             self.buttons[6].SetLabel('Start Plots')
+
+    def SetFitData(self,event):
+        if self.plotManager.fitData:
+            self.plotManager.setFitData(False)
+            self.buttons[9].SetLabel('Linear Fit On')
+        else:
+            self.plotManager.setFitData(True)
+            self.buttons[9].SetLabel('Linear Fit Off')
 
     def ChangeTitle(self,event):
         self.boxCol1 = wx.TextEntryDialog(None,"Plot Title? ","X-axis","0")

@@ -33,11 +33,11 @@ plot parameters will be set based on parsed file.
 
 plotparams.dat example contents
 ------
-xTitle(some x axis) # x axis title
+xTitle(some x axis) # x axis title "some x axis"
 
-yTitle(y label here) # y axis title
+yTitle(y label here) # y axis title "y label here"
 
-Title(new plot) # plot title
+plotTitle(new plot) # plot title "new plot"
 
 xCol(1) # x axis data is second column
 
@@ -47,12 +47,16 @@ xLog() # plot x-axis using log scale
 
 yLog() # plot y-axis using log scale
 
+fit(0:50) # do a linear fit for first 50 columns
+
+histogram() # plot histograms
+
 
 Data labels in file name
 ------
 
-if drag dropped filename has "-label()" in the filename the parentheses will label the data.
+if drag dropped filename has "-label(++)" in the filename the parentheses+ will label the data.
 
--label(my data)
+-label(+my data+)
 
 will label the data as "my data".
